@@ -1,4 +1,4 @@
-## JSON Reorder Tool (Next.js static export)
+## DiffViewr (Next.js static export)
 
 Fully client-side JSON reorder utility:
 

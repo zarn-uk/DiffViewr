@@ -3,25 +3,36 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
-  --bg: #f7faff;
-  --panel: #ffffff;
-  --panel2: #f2f7ff;
+  color-scheme: light;
+  --bg: #F7F8FC;;
+  --panel: #fffdf6;
+  --panel2: #f6f0df;
   --text: #0f172a;
-  --muted: #5b6b84;
-  --border: #d9e2f2;
-  --accent: #2563eb;
-  --accent-weak: rgba(37, 99, 235, 0.12);
+  --muted: #5b6475;
+  --border: #eadfc8;
+  --accent: #7c5cff;
+  --accent-weak: rgba(124, 92, 255, 0.12);
   --danger: #c2410c;
   --ok: #15803d;
   --shadow: 0 12px 30px rgba(47, 41, 33, 0.12);
   --radius: 12px;
+  --logo-diff: #1f2937;
+  --logo-viewr: #6d28d9;
+  --logo-tagline: #475569;
+  --logo-divider-0: #7c5cff;
+  --logo-divider-1: #6d28d9;
+  --logo-tick: #7c5cff;
   --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
   --sans: var(--font-display), "Trebuchet MS", "Segoe UI", Arial, sans-serif;
 }
 
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
 html[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0b0b17;
   --panel: #15142a;
   --panel2: #111225;
@@ -33,10 +44,77 @@ html[data-theme="dark"] {
   --danger: #f59e0b;
   --ok: #34d399;
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  --logo-diff: #eef1ff;
+  --logo-viewr: #e8ff47;
+  --logo-tagline: #3a4070;
+  --logo-divider-0: #e8ff47;
+  --logo-divider-1: #c4d900;
+  --logo-tick: #e8ff47;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.site-menu {
+  position: relative;
+}
+
+.site-menu > summary {
+  list-style: none;
+}
+
+.site-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 2px 8px;
+  border-radius: 0;
+  border: 1px solid transparent;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.site-menu[open] .site-menu-trigger,
+.site-menu-trigger:hover {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--panel) 85%, transparent);
+}
+
+.site-menu-panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  min-width: 200px;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  box-shadow: var(--shadow);
+  padding: 4px;
+}
+
+.site-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 0;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.site-menu-item:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 html,
@@ -44,12 +122,7 @@ body {
   padding: 0;
   margin: 0;
   font-family: var(--sans);
-  background: radial-gradient(1200px 800px at 20% 0%, rgba(230, 240, 255, 0.9), var(--bg)),
-    repeating-linear-gradient(
-      135deg,
-      rgba(37, 99, 235, 0.05) 0 18px,
-      rgba(37, 99, 235, 0) 18px 36px
-    );
+ 
   color: var(--text);
 }
 
@@ -444,5 +517,40 @@ input {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.modal-overlay-in {
+  animation: modalOverlayIn 160ms ease-out both;
+}
+
+.modal-card-in {
+  animation: modalCardIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay-in,
+  .modal-card-in {
+    animation: none;
+  }
+}
+
+@keyframes modalOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

@@ -10,7 +10,12 @@ import { detectIndentFromText, stringifyLikeInput } from "@/lib/stringifyLikeInp
 import { compareJson } from "@/lib/diff/compareJson";
 import { buildSummary } from "@/lib/diff/buildSummary";
 import type { CompareResult } from "@/lib/diff/types";
-import { VisualComparePanel } from "@/components/compare/visual-compare-panel";
+import { ToolIntro } from "@/components/tool/tool-intro";
+import { ToolInfo } from "@/components/tool/tool-info";
+import { JsonInputGrid } from "@/components/tool/json-input-grid";
+import { ValidationPanel } from "@/components/tool/validation-panel";
+import { OutputSection } from "@/components/tool/output-section";
+import { RatingModal } from "@/components/tool/rating-modal";
 import {
   isPlainObject,
   isPrimitive,
@@ -47,7 +52,6 @@ const SAMPLE = {
 } as const;
 
 export default function Page() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [refText, setRefText] = useState<string>("");
   const [targetText, setTargetText] = useState<string>("");
 
@@ -56,6 +60,7 @@ export default function Page() {
   const [result, setResult] = useState<SortResult | null>(null);
   const [compare, setCompare] = useState<CompareResult | null>(null);
   const [activeTab, setActiveTab] = useState<"result" | "compare">("result");
+  const [inputsCollapsed, setInputsCollapsed] = useState<boolean>(false);
   const [validationA, setValidationA] = useState<{ ok: boolean; message: string } | null>(
     null
   );
@@ -67,6 +72,8 @@ export default function Page() {
   const [rating, setRating] = useState<number>(0);
   const [hasRated, setHasRated] = useState<boolean>(false);
   const resultSectionRef = useRef<HTMLElement | null>(null);
+  const isOutputVisible = Boolean(result || compare);
+  const [outputMaximized, setOutputMaximized] = useState<boolean>(false);
 
   const canCopy = useMemo(
     () => Boolean(result?.resultText?.length),
@@ -74,37 +81,30 @@ export default function Page() {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return null;
-    const stored = window.localStorage.getItem("theme");
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored);
-      return;
-    }
-    setTheme("dark");
-    document.documentElement.setAttribute("data-theme", "dark");
-  }, []);
-
-  useEffect(() => {
     if (typeof document === "undefined") return;
     const cookie = document.cookie
       .split("; ")
-      .find((row) => row.startsWith("json_tool_rating="));
+      .find(
+        (row) =>
+          row.startsWith("diffviewr_rating=") ||
+          row.startsWith("json_tool_rating=")
+      );
     if (cookie) setHasRated(true);
   }, []);
 
+  useEffect(() => {
+    if (!isOutputVisible) setInputsCollapsed(false);
+  }, [isOutputVisible]);
+
+  useEffect(() => {
+    if (!isOutputVisible) {
+      setOutputMaximized(false);
+    }
+  }, [isOutputVisible]);
+
   function setRatingCookie(value: number) {
     const maxAge = 60 * 60 * 24 * 365; // 1 year
-    document.cookie = `json_tool_rating=${value}; max-age=${maxAge}; path=/; samesite=lax`;
-  }
-
-  function toggleTheme() {
-    const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("theme", next);
-      document.documentElement.setAttribute("data-theme", next);
-    }
+    document.cookie = `diffviewr_rating=${value}; max-age=${maxAge}; path=/; samesite=lax`;
   }
 
   function clearMessages() {
@@ -118,6 +118,7 @@ export default function Page() {
     setTargetText(JSON.stringify(SAMPLE.target, null, 2));
     setResult(null);
     setCompare(null);
+    setInputsCollapsed(false);
     setValidationA(null);
     setValidationB(null);
     setEffectiveMatchField("");
@@ -211,10 +212,13 @@ export default function Page() {
         });
         setEffectiveMatchField(matchPathToUse);
         setActiveTab("result");
+        setInputsCollapsed(true);
         requestAnimationFrame(() => {
           resultSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
-        if (!hasRated) setShowShareModal(true);
+        if (!hasRated) {
+          setShowShareModal(true);
+        }
       } catch (e) {
         setError(String(e instanceof Error ? e.message : e));
       }
@@ -252,10 +256,13 @@ export default function Page() {
         });
         setEffectiveMatchField(matchFieldPath.trim());
         setActiveTab("result");
+        setInputsCollapsed(true);
         requestAnimationFrame(() => {
           resultSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
-        if (!hasRated) setShowShareModal(true);
+        if (!hasRated) {
+          setShowShareModal(true);
+        }
       } catch (e) {
         setError(String(e instanceof Error ? e.message : e));
       }
@@ -328,10 +335,10 @@ export default function Page() {
     const matchField = detectMatchField(referenceArray, targetArray);
     const fieldTokens = matchField
       ? parseJsonPath(
-          matchField.startsWith("[") || matchField.startsWith(".")
-            ? `$${matchField}`
-            : `$.${matchField}`
-        )
+        matchField.startsWith("[") || matchField.startsWith(".")
+          ? `$${matchField}`
+          : `$.${matchField}`
+      )
       : null;
 
     const bKeyToIndices = new Map<string, number[]>();
@@ -407,120 +414,44 @@ export default function Page() {
     "rounded-xl border border-[var(--border)] bg-[linear-gradient(180deg,var(--panel),var(--panel2))] shadow-[var(--shadow)] p-4";
   const inputClass =
     "w-full rounded-xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_85%,transparent)] text-[var(--text)] font-mono text-[12.5px] leading-relaxed p-3 focus:outline-none focus:border-[var(--accent)]";
+  const jsonInputSizeClass =
+    activeTab === "compare" || isOutputVisible
+      ? "min-h-[160px] max-h-[220px]"
+      : "min-h-[520px]";
   const buttonBase =
-    "px-3 py-2 rounded-lg border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] text-sm hover:border-[var(--accent)]";
+    "px-3 py-2 rounded-lg border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] text-sm hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
   const buttonPrimary =
-    "px-3 py-2 rounded-lg border border-[var(--accent)] bg-[var(--accent-weak)] text-sm";
+    "px-3 py-2 rounded-lg border border-[var(--accent)] bg-[var(--accent-weak)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
 
   return (
-    <main className="w-[85%] mx-auto p-6 flex flex-col min-h-screen">
-      <header className="rounded-2xl p-4 shadow-[var(--shadow)] mb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl tracking-wide font-semibold">JSON Reorder Tool</h1>
-            <p className="text-[13px] text-[var(--muted)] mt-1 leading-relaxed">
-              Paste Reference JSON (A) and Target JSON (B). Reorder only the{" "}
-              <strong>ordering</strong> at a JSON path (default <code>$</code>).
-              No backend, no uploads.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              className={buttonBase}
-              onClick={toggleTheme}
-              type="button"
-              aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-            >
-              <span className="text-base">{theme === "light" ? "🌙" : "☀️"}</span>
-            </button>
-            <button
-              className={buttonBase}
-              onClick={onLoadSample}
-              type="button"
-              aria-label="Load sample JSON"
-              title="Load sample JSON"
-            >
-              <span className="text-base">✨</span>
-            </button>
-          </div>
-        </div>
-      </header>
+    <main id="main" className="py-8 flex flex-col">
+      <a
+        href="#results"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-[var(--panel)] focus:px-3 focus:py-2 focus:text-sm focus:text-[var(--text)] focus:shadow-[var(--shadow)]"
+      >
+        Skip to results
+      </a>
 
-      <div className="mb-3 rounded-lg border border-[color-mix(in_srgb,var(--accent)_25%,transparent)] bg-[color-mix(in_srgb,var(--panel)_88%,transparent)] px-3 py-2 text-[12.5px] text-[var(--muted)]">
-        <strong className="text-[var(--text)]">🔒 Privacy-first:</strong> Your JSON is
-        processed entirely in your browser. We do not collect or store your data.
-      </div>
+      <ToolIntro buttonClass={buttonBase} onLoadSample={onLoadSample} />
+      <ToolInfo panelClass={panelClass} />
+      <JsonInputGrid
+        panelClass={panelClass}
+        inputClass={inputClass}
+        jsonInputSizeClass={jsonInputSizeClass}
+        buttonBase={buttonBase}
+        isOutputVisible={isOutputVisible}
+        inputsCollapsed={inputsCollapsed}
+        onToggleInputsCollapsed={() => setInputsCollapsed((v) => !v)}
+        refText={refText}
+        setRefText={setRefText}
+        targetText={targetText}
+        setTargetText={setTargetText}
+        validationA={validationA}
+        validationB={validationB}
+      />
+      <ValidationPanel panelClass={panelClass} validationA={validationA} validationB={validationB} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <section className={panelClass}>
-          <h2 className="text-sm text-[var(--muted)] font-semibold mb-2">
-            1) Reference JSON (A)
-          </h2>
-          <textarea
-            className={`${inputClass} min-h-[520px]`}
-            value={refText}
-            onChange={(e) => setRefText(e.target.value)}
-            placeholder='Paste JSON here. Example: {"items":[{"id":"a"},{"id":"b"}]}'
-            spellCheck={false}
-          />
-          {validationA ? (
-            <div className="mt-2 text-[13px] text-[var(--muted)]">
-              {validationA.ok ? "Valid JSON." : validationA.message}
-            </div>
-          ) : null}
-        </section>
-
-        <section className={panelClass}>
-          <h2 className="text-sm text-[var(--muted)] font-semibold mb-2">
-            2) Target JSON (B)
-          </h2>
-          <textarea
-            className={`${inputClass} min-h-[520px]`}
-            value={targetText}
-            onChange={(e) => setTargetText(e.target.value)}
-            placeholder='Paste JSON here. Example: {"items":[{"id":"b"},{"id":"a"}]}'
-            spellCheck={false}
-          />
-          {validationB ? (
-            <div className="mt-2 text-[13px] text-[var(--muted)]">
-              {validationB.ok ? "Valid JSON." : validationB.message}
-            </div>
-          ) : null}
-        </section>
-      </div>
-
-      {(validationA || validationB) && (
-        <div className={`${panelClass} mt-4`}>
-          <h2 className="text-sm text-[var(--muted)] font-semibold mb-2">
-            Validation
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[13px]">
-            <div
-              className={`rounded-xl border p-2 ${
-                validationA?.ok
-                  ? "border-[color-mix(in_srgb,var(--ok)_45%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,transparent)]"
-                  : "border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)]"
-              }`}
-            >
-              <strong>Reference (A):</strong>{" "}
-              {validationA ? (validationA.ok ? "Valid JSON." : validationA.message) : "Not checked yet."}
-            </div>
-            <div
-              className={`rounded-xl border p-2 ${
-                validationB?.ok
-                  ? "border-[color-mix(in_srgb,var(--ok)_45%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,transparent)]"
-                  : "border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)]"
-              }`}
-            >
-              <strong>Target (B):</strong>{" "}
-              {validationB ? (validationB.ok ? "Valid JSON." : validationB.message) : "Not checked yet."}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <section ref={resultSectionRef} className="mt-4">
+      <section id="results" ref={resultSectionRef} className="mt-4">
         <div className="flex flex-wrap gap-2 justify-center">
           <button className={buttonPrimary} onClick={sortAndCompare} type="button">
             Sort & Compare
@@ -543,109 +474,60 @@ export default function Page() {
         </div>
 
         {error ? (
-          <div className="mt-2 rounded-xl border border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] p-2 text-[13px]">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="mt-2 rounded-xl border border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] p-2 text-[13px]"
+          >
             {error}
           </div>
         ) : null}
         {status ? (
-          <div className="mt-2 rounded-xl border border-[color-mix(in_srgb,var(--ok)_45%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,transparent)] p-2 text-[13px]">
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-2 rounded-xl border border-[color-mix(in_srgb,var(--ok)_45%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,transparent)] p-2 text-[13px]"
+          >
             {status}
           </div>
         ) : null}
       </section>
 
-      {result || compare ? (
-        <section className={`${panelClass} mt-4`}>
-          <div className="flex flex-wrap gap-2 mb-2">
-            <button
-              className={activeTab === "result" ? buttonPrimary : buttonBase}
-              onClick={() => setActiveTab("result")}
-              type="button"
-            >
-              Sorted Result
-            </button>
-            <button
-              className={activeTab === "compare" ? buttonPrimary : buttonBase}
-              onClick={() => setActiveTab("compare")}
-              type="button"
-            >
-              Visual Compare
-            </button>
-          </div>
-          {activeTab === "result" ? (
-            <>
-              <h2 className="text-sm text-[var(--muted)] font-semibold mb-2">4) Result</h2>
-              <textarea
-                className={`${inputClass} min-h-[260px]`}
-                value={result?.resultText ?? ""}
-                readOnly
-                placeholder="Sorted JSON appears here."
-                spellCheck={false}
-              />
-            </>
-          ) : (
-            <>
-              <h2 className="text-sm text-[var(--muted)] font-semibold mb-2">
-                4) Visual Compare
-              </h2>
-              {compare ? (
-                <VisualComparePanel result={compare} />
-              ) : (
-                <div className="text-[13px] text-[var(--muted)]">
-                  Run <strong>Sort & Compare</strong> to see differences.
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      ) : null}
+      <OutputSection
+        panelClass={panelClass}
+        inputClass={inputClass}
+        buttonBase={buttonBase}
+        buttonPrimary={buttonPrimary}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        resultText={result?.resultText ?? null}
+        compare={compare}
+        outputMaximized={outputMaximized}
+        setOutputMaximized={setOutputMaximized}
+        onMaximize={() => {
+          setInputsCollapsed(true);
+          setOutputMaximized(true);
+        }}
+      />
 
-      {showShareModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_92%,transparent)] p-5 shadow-[var(--shadow)]">
-            <div className="text-sm text-[var(--muted)] mb-1">Quick favor</div>
-            <h3 className="text-lg font-semibold">How was the experience?</h3>
-            <p className="text-[13px] text-[var(--muted)] mt-2 leading-relaxed">
-              A quick star rating helps us improve.
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  className={`text-2xl transition-transform ${
-                    rating >= star ? "text-[var(--accent)]" : "text-[var(--muted)]"
-                  } hover:scale-110`}
-                  aria-label={`${star} star`}
-                  onClick={() => setRating(star)}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                className={buttonPrimary}
-                type="button"
-                onClick={() => {
-                  if (rating > 0) {
-                    setRatingCookie(rating);
-                    setHasRated(true);
-                  }
-                  setShowShareModal(false);
-                }}
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
-      <footer className="mt-auto text-center text-xs text-[var(--muted)] rounded-xl p-3">
-        Free forever • Privacy-first • Support the project or ☕ Support
-      </footer>
+      <RatingModal
+        open={showShareModal}
+        rating={rating}
+        onRate={setRating}
+        onClose={() => setShowShareModal(false)}
+        onConfirm={() => {
+          if (rating > 0) {
+            setRatingCookie(rating);
+            setHasRated(true);
+          }
+          setShowShareModal(false);
+        }}
+        confirmDisabled={rating === 0}
+        buttonBase={buttonBase}
+        buttonPrimary={buttonPrimary}
+      />
+
     </main>
   );
 }
-

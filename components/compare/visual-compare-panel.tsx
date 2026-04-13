@@ -332,6 +332,25 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <img
+            src="/brand/diffviewr-logo.svg"
+            width={18}
+            height={18}
+            className="w-[18px] h-[18px]"
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+          />
+          <div className="text-sm font-semibold text-[var(--text)]">
+            Visual Compare
+            <span className="ml-2 text-[12px] font-normal text-[var(--muted)]">
+              DiffViewr (local-only)
+            </span>
+          </div>
+        </div>
+      </div>
       <DiffSummaryBar summary={result.summary} />
       <DiffLegend />
       <div className="json-scroll rounded-xl border border-[var(--border)]">
@@ -357,7 +376,7 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
           </div>
           <div className="overflow-hidden">
             <div className="sticky top-0 z-10 px-3 py-2 text-xs uppercase text-[var(--muted)] border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)]">
-              Sorted Target (B)
+              Reordered Target (B)
             </div>
             <div className="json-view">
               {aligned.map((line, idx) => {
