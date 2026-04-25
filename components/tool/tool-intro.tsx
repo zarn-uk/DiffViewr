@@ -26,7 +26,7 @@ export function ToolIntro({ buttonClass, onLoadSample }: Props) {
   aria-label="Load an example diff"
   title="Load an example diff"
   className="inline-flex items-center justify-center gap-2 px-5 py-2 text-[12px] font-bold text-white rounded-full
-             bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110
+             bg-gradient-to-r from-blue-900 to-blue-550 hover:brightness-110
              shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all duration-300
              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
              focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] cursor-pointer whitespace-nowrap"
