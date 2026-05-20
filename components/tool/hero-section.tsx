@@ -37,7 +37,7 @@ export function HeroSection() {
           Paste your template as A, your environment config as B. See only what actually changed.
         </p>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col items-start gap-3">
           <Link
             href="/tool"
             className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#00d4aa] to-[#22d3ee] px-5 py-3 text-[15px] font-semibold text-[#06110f] shadow-[0_10px_30px_rgba(0,212,170,0.22)] transition-all hover:-translate-y-px hover:shadow-[0_14px_36px_rgba(0,212,170,0.3)] active:translate-y-0"
@@ -51,13 +51,13 @@ export function HeroSection() {
                 strokeLinejoin="round"
               />
             </svg>
-            Open DiffViewr
+            Start Diffing
           </Link>
           <Link
             href="/tool?sample=1"
-            className="inline-flex items-center rounded-lg border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_78%,transparent)] px-5 py-3 text-[15px] font-semibold text-[var(--text)] transition-all hover:-translate-y-px hover:border-[#00d4aa] hover:bg-[color-mix(in_srgb,var(--panel)_65%,#00d4aa_8%)] active:translate-y-0"
+            className="font-mono text-[12px] font-semibold text-cyan-400 transition hover:text-cyan-300"
           >
-            Try Example
+            View Live Demo →
           </Link>
         </div>
 

@@ -2,15 +2,50 @@ import Link from "next/link";
 import { HeroSection } from "@/components/tool/hero-section";
 
 type TrustPoint = {
-  label: string;
+  title: string;
+  subLabel: string;
+  icon: string;
   href?: string;
 };
 
 const trustPoints: TrustPoint[] = [
-  { label: "100% client-side — no account, no upload" },
-  { label: "JSON · YAML · .ENV" },
-  { label: "Template A → Target B" },
-  { label: "Source-of-truth aligned" }
+  {
+    title: "100% client-side",
+    subLabel: "no account, no upload",
+    icon: "ti-shield-lock"
+  },
+  {
+    title: "JSON · YAML · .ENV",
+    subLabel: "format-aware compare",
+    icon: "ti-file-code"
+  },
+  {
+    title: "Template A → Target B",
+    subLabel: "source-of-truth flow",
+    icon: "ti-arrow-right"
+  },
+  {
+    title: "GitHub-ready",
+    subLabel: "cleaner PR diffs",
+    icon: "ti-brand-github"
+  }
+];
+
+const leftImpactDetails = [
+  {
+    text: "44 are just key reordering",
+    color: "bg-[var(--danger)]"
+  },
+  {
+    text: "3 are real value changes",
+    color: "bg-[var(--ok)]"
+  }
+];
+
+const rightImpactDetails = [
+  "Serilog.Default changed",
+  "System key added",
+  "Microsoft.Default changed"
 ];
 
 const useCases = [
@@ -32,25 +67,6 @@ const useCases = [
   }
 ];
 
-const features = [
-  {
-    title: "Template-aligned comparison",
-    copy: "DiffViewr aligns Target B to Template A so key order changes stop hiding the real changes."
-  },
-  {
-    title: "Visual compare preview",
-    copy: "Changed, missing, and extra values are highlighted side by side for quick review."
-  },
-  {
-    title: "Format detection",
-    copy: "Paste JSON, YAML, or ENV-style configuration and get validation feedback before comparing."
-  },
-  {
-    title: "Export clean, reordered config",
-    copy: "Generate a clean reordered result that is easier to review, commit, and share."
-  }
-];
-
 export const metadata = {
   title: "DiffViewr | Config File Diff Tool for Developers",
   description:
@@ -66,20 +82,28 @@ export default function Page() {
         {trustPoints.map((point) => (
           point.href ? (
             <a
-              key={point.label}
+              key={point.title}
               href={point.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_78%,transparent)] px-4 py-3 text-center font-mono text-[12px] text-[var(--muted)] transition hover:border-cyan-400 hover:text-[var(--text)]"
+              className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_78%,transparent)] px-4 py-3 text-left font-mono text-[12px] text-[var(--muted)] transition hover:border-cyan-400 hover:text-[var(--text)]"
             >
-              {point.label}
+              <i className={`ti ${point.icon} mt-0.5 text-[18px] text-cyan-400`} aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block font-bold leading-5 text-[var(--text)]">{point.title}</span>
+                <span className="block leading-5 text-[var(--muted)]">{point.subLabel}</span>
+              </span>
             </a>
           ) : (
             <div
-              key={point.label}
-              className="border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_78%,transparent)] px-4 py-3 text-center font-mono text-[12px] text-[var(--muted)]"
+              key={point.title}
+              className="flex items-start gap-3 rounded-lg border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_78%,transparent)] px-4 py-3 text-left font-mono text-[12px] text-[var(--muted)]"
             >
-              {point.label}
+              <i className={`ti ${point.icon} mt-0.5 text-[18px] text-cyan-400`} aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block font-bold leading-5 text-[var(--text)]">{point.title}</span>
+                <span className="block leading-5 text-[var(--muted)]">{point.subLabel}</span>
+              </span>
             </div>
           )
         ))}
@@ -92,9 +116,17 @@ export default function Page() {
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <div className="border border-[color-mix(in_srgb,var(--danger)_42%,transparent)] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] px-5 py-3 text-center font-mono text-[13px] text-[var(--danger)]">
             <div>appsettings.stg.json vs git diff</div>
-            <div className="mt-2 text-[24px] font-bold leading-none">47</div>
+            <div className="mt-2 text-[52px] font-bold leading-none">47</div>
             <div className="mt-1 text-[11px] text-[var(--muted)]">
               lines flagged as changed
+            </div>
+            <div className="mt-3 grid gap-1 text-left">
+              {leftImpactDetails.map((detail) => (
+                <div key={detail.text} className="flex items-center gap-2 font-mono text-[11px] text-[var(--muted)]">
+                  <span className={`h-px w-4 ${detail.color}`} aria-hidden="true" />
+                  <span>{detail.text}</span>
+                </div>
+              ))}
             </div>
           </div>
           <div className="font-mono text-[18px] text-[var(--muted)]" aria-hidden="true">
@@ -103,43 +135,127 @@ export default function Page() {
           </div>
           <div className="border border-[color-mix(in_srgb,var(--ok)_42%,transparent)] bg-[color-mix(in_srgb,var(--ok)_10%,transparent)] px-5 py-3 text-center font-mono text-[13px] text-[var(--ok)]">
             <div>appsettings.stg.json in DiffViewr</div>
-            <div className="mt-2 text-[24px] font-bold leading-none">3</div>
+            <div className="mt-2 text-[52px] font-bold leading-none">3</div>
             <div className="mt-1 text-[11px] text-[var(--muted)]">
               real value differences
             </div>
+            <div className="mt-3 grid gap-1 text-left">
+              {rightImpactDetails.map((detail) => (
+                <div key={detail} className="flex items-center gap-2 font-mono text-[11px] text-[var(--muted)]">
+                  <span className="h-px w-4 bg-[var(--ok)]" aria-hidden="true" />
+                  <span>{detail}</span>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
+        <div className="mt-4 text-center">
+          <Link href="/tool?sample=1" className="font-mono text-[12px] text-cyan-400">
+            See this example in the tool →
+          </Link>
         </div>
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-10 py-12">
-        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-          <div>
-            <p className="font-mono text-[12px] uppercase tracking-[1.8px] text-cyan-400">
-              Template · Target · diff
-            </p>
-            <h2 className="mt-3 font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-tight text-[var(--text)]">
-              The only diff tool that treats one file as the source of truth.
-            </h2>
-            <p className="mt-4 max-w-xl text-[16px] leading-7 text-[var(--muted)]">
-              Most tools treat both sides equally. DiffViewr treats Template A as the reference — your target config is aligned to it, not just compared against it.
-            </p>
-          </div>
+        <div className="mb-7 max-w-3xl">
+          <p className="font-mono text-[12px] uppercase tracking-[1.8px] text-cyan-400">
+            Template · Target · diff
+          </p>
+          <h2 className="mt-3 font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-tight text-[var(--text)]">
+            The only diff tool that treats one file as the source of truth.
+          </h2>
+          <p className="mt-4 max-w-2xl text-[16px] leading-7 text-[var(--muted)]">
+            Most tools treat both sides equally. DiffViewr treats Template A as the reference — your target config is aligned to it, not just compared against it.
+          </p>
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {features.map((feature) => (
-              <article
-                key={feature.title}
-                className="border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] p-5"
-              >
-                <h3 className="font-display text-[18px] font-semibold text-[var(--text)]">
-                  {feature.title}
+        <div className="grid auto-rows-[minmax(210px,auto)] gap-4 lg:grid-cols-4">
+          <article className="group overflow-hidden rounded-lg border border-[color-mix(in_srgb,var(--border)_75%,#22d3ee_20%)] bg-[#071017] p-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.24)] transition duration-300 hover:border-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_22px_70px_rgba(34,211,238,0.14)] lg:col-span-2 lg:row-span-2">
+            <div className="flex h-full flex-col justify-between gap-6">
+              <div>
+                <h3 className="font-display text-[24px] font-semibold leading-tight text-white">
+                  Template-aligned comparison
                 </h3>
-                <p className="mt-3 text-[14px] leading-6 text-[var(--muted)]">
-                  {feature.copy}
+                <p className="mt-3 max-w-xl text-[14px] leading-6 text-slate-300">
+                  Reorder Target B against Template A first, then review the differences that still matter.
                 </p>
-              </article>
-            ))}
-          </div>
+              </div>
+
+              <div className="grid gap-3 rounded-lg border border-cyan-400/20 bg-black/35 p-3 font-mono text-[11px] leading-5 text-slate-100 sm:grid-cols-[1fr_auto_1fr]">
+                <div className="rounded border border-white/10 bg-[#0b1620] p-3">
+                  <div className="mb-2 text-[10px] uppercase tracking-[1.4px] text-cyan-300">template.yml</div>
+                  <div className="text-slate-400">logging:</div>
+                  <div className="pl-3 text-white">level: info</div>
+                  <div className="pl-3 text-white">path: /var/log</div>
+                  <div className="text-slate-400">system:</div>
+                  <div className="pl-3 text-white">region: eu</div>
+                </div>
+                <div className="flex items-center justify-center text-[18px] text-cyan-300">→</div>
+                <div className="rounded border border-cyan-400/25 bg-[#0d1b24] p-3 shadow-[inset_0_0_22px_rgba(34,211,238,0.08)]">
+                  <div className="mb-2 text-[10px] uppercase tracking-[1.4px] text-cyan-300">target reordered</div>
+                  <div className="text-slate-400">logging:</div>
+                  <div className="pl-3 text-white">level: debug</div>
+                  <div className="pl-3 text-white">path: /var/log</div>
+                  <div className="text-slate-400">system:</div>
+                  <div className="pl-3 text-emerald-300">region: eu</div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article className="group rounded-lg border border-[color-mix(in_srgb,var(--border)_75%,#22d3ee_20%)] bg-[#071017] p-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.2)] transition duration-300 hover:border-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_22px_70px_rgba(34,211,238,0.14)] lg:col-span-2">
+            <h3 className="font-display text-[20px] font-semibold text-white">
+              Visual compare preview
+            </h3>
+            <p className="mt-2 text-[14px] leading-6 text-slate-300">
+              Changed, missing, and extra values stay readable in a fast side-by-side pass.
+            </p>
+            <div className="mt-4 grid gap-3 font-mono text-[11px] leading-5 sm:grid-cols-2">
+              <div className="rounded border border-red-400/25 bg-red-950/20 p-3">
+                <div className="mb-2 text-[10px] uppercase tracking-[1.4px] text-red-300">missing</div>
+                <div className="bg-red-400/15 px-2 py-1 text-red-200">- Serilog.Default: Warning</div>
+                <div className="px-2 py-1 text-slate-300">  Microsoft.Default: Info</div>
+              </div>
+              <div className="rounded border border-emerald-400/25 bg-emerald-950/20 p-3">
+                <div className="mb-2 text-[10px] uppercase tracking-[1.4px] text-emerald-300">added</div>
+                <div className="bg-emerald-400/15 px-2 py-1 text-emerald-200">+ System: Enabled</div>
+                <div className="px-2 py-1 text-slate-300">  Microsoft.Default: Debug</div>
+              </div>
+            </div>
+          </article>
+
+          <article className="group rounded-lg border border-[color-mix(in_srgb,var(--border)_75%,#22d3ee_20%)] bg-[#071017] p-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.2)] transition duration-300 hover:border-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_22px_70px_rgba(34,211,238,0.14)]">
+            <h3 className="font-display text-[18px] font-semibold text-white">
+              Format detection
+            </h3>
+            <p className="mt-2 text-[13px] leading-6 text-slate-300">
+              Paste config and get validation feedback before comparing.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 font-mono text-[12px] font-semibold">
+              {["JSON", "YAML", ".ENV"].map((format) => (
+                <span key={format} className="rounded border border-cyan-400/25 bg-cyan-400/10 px-3 py-2 text-cyan-200">
+                  {format}
+                </span>
+              ))}
+            </div>
+          </article>
+
+          <article className="group rounded-lg border border-[color-mix(in_srgb,var(--border)_75%,#22d3ee_20%)] bg-[#071017] p-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.2)] transition duration-300 hover:border-cyan-400 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_22px_70px_rgba(34,211,238,0.14)]">
+            <h3 className="font-display text-[18px] font-semibold text-white">
+              Export clean, reordered config
+            </h3>
+            <p className="mt-2 text-[13px] leading-6 text-slate-300">
+              Generate a clean result that is easier to review, commit, and share.
+            </p>
+            <div className="mt-5 rounded-lg border border-white/10 bg-black/35 p-3">
+              <div className="mb-3 h-2 w-20 rounded-full bg-slate-700" />
+              <div className="mb-2 h-2 w-full rounded-full bg-slate-800" />
+              <div className="h-2 w-2/3 rounded-full bg-slate-800" />
+              <div className="mt-4 inline-flex rounded-lg bg-gradient-to-r from-[#00d4aa] to-[#22d3ee] px-4 py-2 font-mono text-[12px] font-bold text-[#06110f] shadow-[0_10px_30px_rgba(0,212,170,0.22)]">
+                Copy Config
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 

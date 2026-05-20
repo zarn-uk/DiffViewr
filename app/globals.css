@@ -3,8 +3,34 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: dark;
+  --bg: #080d12;
+  --panel: #0d141b;
+  --panel2: #111b24;
+  --text: #f2f1ff;
+  --muted: #b8b3d6;
+  --border: rgba(0, 212, 170, 0.16);
+  --accent: #30cfd0;
+  --accent-weak: rgba(48, 207, 208, 0.16);
+  --warn: #f59e0b;
+  --danger: #f59e0b;
+  --ok: #34d399;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  --radius: 12px;
+  --logo-diff: #eef1ff;
+  --logo-viewr: #e8ff47;
+  --logo-tagline: #3a4070;
+  --logo-divider-0: #30cfd0;
+  --logo-divider-1: #22d3ee;
+  --logo-tick: #30cfd0;
+  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --sans: var(--font-display), "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+}
+
+html[data-theme="light"] {
   color-scheme: light;
-  --bg: #F7F8FC;;
+  --bg: #F7F8FC;
   --panel: #fffdf6;
   --panel2: #f6f0df;
   --text: #0f172a;
@@ -16,20 +42,9 @@
   --danger: #c2410c;
   --ok: #15803d;
   --shadow: 0 12px 30px rgba(47, 41, 33, 0.12);
-  --radius: 12px;
   --logo-diff: #1f2937;
   --logo-viewr: #6d28d9;
   --logo-tagline: #475569;
-  --logo-divider-0: #30cfd0;
-  --logo-divider-1: #22d3ee;
-  --logo-tick: #30cfd0;
-  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  --sans: var(--font-display), "Trebuchet MS", "Segoe UI", Arial, sans-serif;
-}
-
-html[data-theme="light"] {
-  color-scheme: light;
 }
 
 html[data-theme="dark"] {
@@ -153,7 +168,7 @@ html[data-theme="dark"] body {
   min-height: 100%;
   width: 100%;
   position: relative;
-  background-color: #0f0f0f;
+  background-color: transparent;
 }
 
 .dark-circuit-background {
