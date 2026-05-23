@@ -27,20 +27,20 @@ export function HeroSection() {
           Open source on GitHub
         </a>
 
-        <h1 className="font-display text-[clamp(2.4rem,5vw,3.6rem)] font-extrabold leading-[1.06] tracking-[-0.025em] text-[var(--text)]">
+        <h1 className="font-sans text-[clamp(2.4rem,5vw,3.6rem)] font-normal leading-none tracking-tight text-[var(--text)]">
           Review config changes,
           <br />
           <em className="not-italic text-cyan-400">without the noise.</em>
         </h1>
 
-        <p className="font-sans text-[17px] leading-[1.7] text-[var(--muted)] max-w-[440px] tracking-[-0.005em]">
+        <p className="font-sans text-[17px] font-normal leading-relaxed tracking-normal text-[var(--muted)] max-w-[440px]">
           Paste your template as A, your environment config as B. See only what actually changed.
         </p>
 
         <div className="flex flex-col items-start gap-3">
           <Link
             href="/tool"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#00d4aa] to-[#22d3ee] px-5 py-3 text-[15px] font-semibold text-[#06110f] shadow-[0_10px_30px_rgba(0,212,170,0.22)] transition-all hover:-translate-y-px hover:shadow-[0_14px_36px_rgba(0,212,170,0.3)] active:translate-y-0"
+            className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-5 py-3 font-sans text-[15px] font-medium text-[#0c0e11] transition hover:opacity-90"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
@@ -51,7 +51,7 @@ export function HeroSection() {
                 strokeLinejoin="round"
               />
             </svg>
-            Start Diffing
+            Open the tool
           </Link>
           <Link
             href="/tool?sample=1"

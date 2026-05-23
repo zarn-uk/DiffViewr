@@ -1,10 +1,12 @@
+import { load } from "js-yaml";
+
 export function detectFormat(
   input: string,
 ): "json" | "yaml" | "env" | "unknown" {
   const text = (input ?? "").trim();
   if (!text) return "unknown";
 
-  // 1) JSON: valid parseable JSON (any JSON value).
+  // 1) JSON: valid parseable JSON (authoritative).
   try {
     JSON.parse(text);
     return "json";
@@ -12,7 +14,26 @@ export function detectFormat(
     // fall through
   }
 
-  // Split into meaningful, non-comment lines once; used by env/yaml heuristics.
+  // If it looks like JSON but strict JSON parsing failed, do not let YAML's
+  // permissive superset grammar classify malformed JSON as YAML.
+  if (text.startsWith("{") || text.startsWith("[")) return "unknown";
+
+  // 2) YAML: strict parser check, but ignore plain scalar strings so ENV and
+  // arbitrary text are not swallowed by YAML's permissive scalar parsing.
+  try {
+    const result = load(text);
+    if (
+      result !== null &&
+      result !== undefined &&
+      typeof result === "object"
+    ) {
+      return "yaml";
+    }
+  } catch {
+    // fall through
+  }
+
+  // 3) ENV: dotenv style KEY=VALUE.
   const rawLines = (input ?? "").split(/\r?\n/);
   const lines = rawLines
     .map((l) => l.trimEnd())
@@ -22,54 +43,10 @@ export function detectFormat(
 
   if (lines.length === 0) return "unknown";
 
-  // 2) ENV: dotenv style KEY=VALUE
-  // Keep it conservative: require that most meaningful lines look like KEY=VALUE.
   const envLineRe =
     /^(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=\s*(?:.*)?$/;
   const envLineCount = lines.filter((l) => envLineRe.test(l)).length;
   if (envLineCount > 0 && envLineCount / lines.length >= 0.8) return "env";
-
-  // 3) YAML: key: value structure or significant indentation / list items.
-  // Heuristic only (no YAML parsing).
-  const yamlDocMarkerRe = /^(?:---|\.\.\.)\s*$/;
-  const yamlLines = lines.filter((l) => !yamlDocMarkerRe.test(l));
-  if (yamlLines.length === 0) return "unknown";
-
-  const yamlKeyRe =
-    /^(?:[A-Za-z_][A-Za-z0-9_."'-]*|"(?:[^"\\]|\\.)+"|'(?:[^'\\]|\\.)+')\s*:\s*(?:.*)?$/;
-  const yamlKeyOnlyRe =
-    /^(?:[A-Za-z_][A-Za-z0-9_."'-]*|"(?:[^"\\]|\\.)+"|'(?:[^'\\]|\\.)+')\s*:\s*$/;
-  const yamlListItemRe = /^-\s+\S/;
-  const yamlIndentedRe = /^(?: {2,}|\t+)\S/;
-
-  const keyLineCount = yamlLines.filter((l) => yamlKeyRe.test(l)).length;
-  const keyOnlyLineCount = yamlLines.filter((l) => yamlKeyOnlyRe.test(l)).length;
-  const listItemLineCount = yamlLines.filter((l) => yamlListItemRe.test(l)).length;
-  const indentedLineCount = rawLines.filter((l) => yamlIndentedRe.test(l)).length;
-
-  // Strong signal: a majority of meaningful lines look like YAML mappings.
-  if (keyLineCount > 0 && keyLineCount / yamlLines.length >= 0.5) return "yaml";
-
-  // Common YAML shapes: "key:" followed by indented block or list items.
-  if (
-    keyOnlyLineCount > 0 &&
-    (indentedLineCount > 0 || listItemLineCount > 0)
-  ) {
-    return "yaml";
-  }
-
-  // Significant indentation on multiple lines can be YAML even without ":".
-  if (indentedLineCount >= 2 && indentedLineCount / rawLines.length >= 0.5) {
-    return "yaml";
-  }
-
-  // Pure list YAML.
-  if (
-    listItemLineCount >= 2 &&
-    listItemLineCount / Math.max(1, yamlLines.length) >= 0.5
-  ) {
-    return "yaml";
-  }
 
   return "unknown";
 }

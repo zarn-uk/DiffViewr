@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-type Props = {
+export type RatingModalProps = {
   open: boolean;
   rating: number;
   onRate: (value: number) => void;
@@ -22,7 +22,7 @@ export function RatingModal({
   confirmDisabled,
   buttonBase,
   buttonPrimary
-}: Props) {
+}: RatingModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const lastFocusRef = useRef<HTMLElement | null>(null);
 
@@ -67,10 +67,10 @@ export function RatingModal({
         className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_92%,transparent)] p-5 shadow-[var(--shadow)] modal-card-in focus:outline-none"
       >
         <div className="text-sm text-[var(--muted)] mb-1">Quick favor</div>
-        <h3 id="feedback-title" className="text-lg font-semibold">
+        <h3 id="feedback-title" className="font-sans text-lg font-normal leading-snug tracking-[-0.01em]">
           How was the experience?
         </h3>
-        <p id="feedback-desc" className="text-[14px] text-[var(--muted)] mt-2 leading-relaxed">
+        <p id="feedback-desc" className="mt-2 font-sans text-[14px] font-normal leading-relaxed tracking-normal text-[var(--muted)]">
           A quick star rating helps us improve.
         </p>
         <div className="mt-4 flex items-center gap-2" role="radiogroup" aria-label="Star rating">
@@ -107,4 +107,3 @@ export function RatingModal({
     </div>
   );
 }
-

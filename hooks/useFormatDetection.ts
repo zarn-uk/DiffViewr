@@ -21,8 +21,8 @@ export function useFormatDetection(
 } {
   const [format, setFormat] = useState<DetectedFormat>(() => detectFormat(value));
   const [isDetecting, setIsDetecting] = useState(false);
-  const isFirstRun = useRef(true);
   const immediateNextChange = useRef(false);
+  const lastValue = useRef(value);
   const debounceMs = options?.debounceMs ?? 600;
 
   const detectNow = useCallback(
@@ -39,10 +39,10 @@ export function useFormatDetection(
   }, []);
 
   useEffect(() => {
-    if (isFirstRun.current) {
-      isFirstRun.current = false;
+    if (value === lastValue.current) {
       return;
     }
+    lastValue.current = value;
 
     if (immediateNextChange.current) {
       immediateNextChange.current = false;
@@ -50,10 +50,12 @@ export function useFormatDetection(
       return;
     }
 
-    setIsDetecting(true);
+    setFormat("unknown");
+
+    // Only perform detection after the user has stopped typing for the debounce period.
+    // Do not flip isDetecting on every keystroke so the input keeps stable focus.
     const t = setTimeout(() => {
       setFormat(detectFormat(value));
-      setIsDetecting(false);
     }, debounceMs);
 
     return () => clearTimeout(t);

@@ -1,6 +1,11 @@
 "use client";
 
-export type ThemeName = "github-light" | "github-dark" | "vitesse-light" | "vitesse-dark" | "dark-plus";
+import { createBundledHighlighter } from "@shikijs/core";
+import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
+import type { HighlighterGeneric } from "@shikijs/types";
+
+export type ThemeName = "github-light" | "dark-plus";
+export type ShikiLang = "json" | "yaml" | "dotenv";
 
 export type ShikiToken = {
   content: string;
@@ -9,57 +14,35 @@ export type ShikiToken = {
 
 export type ShikiTokenLine = ShikiToken[];
 
-type ShikiHighlighterLike = {
-  codeToThemedTokens?: (code: string, opts: { lang: string; theme: string }) => unknown;
-  codeToTokens?: (code: string, opts: { lang: string; theme?: string }) => unknown;
-};
+type ShikiHighlighterLike = HighlighterGeneric<ShikiLang, ThemeName>;
 
 let cachedHighlighterPromise: Promise<ShikiHighlighterLike> | null = null;
 let cachedThemePair: [ThemeName, ThemeName] | null = null;
 
-async function createHighlighterWithThemes(
-  shiki: Record<string, unknown>,
-  themes: [ThemeName, ThemeName],
-): Promise<ShikiHighlighterLike> {
-  const createHighlighter = shiki.createHighlighter as
-    | ((opts: { themes: string[]; langs: string[] }) => Promise<unknown>)
-    | undefined;
-
-  if (!createHighlighter) {
-    const getHighlighter = shiki.getHighlighter as
-      | ((opts: { theme: string; langs: string[] }) => Promise<unknown>)
-      | undefined;
-    if (!getHighlighter) throw new Error("Shiki highlighter factory not found.");
-    return (await getHighlighter({ theme: themes[1], langs: ["json"] })) as ShikiHighlighterLike;
-  }
-
-  return (await createHighlighter({ themes: [...themes], langs: ["json"] })) as ShikiHighlighterLike;
-}
+const createHighlighter = createBundledHighlighter<ShikiLang, ThemeName>({
+  langs: {
+    json: () => import("@shikijs/langs/json"),
+    yaml: () => import("@shikijs/langs/yaml"),
+    dotenv: () => import("@shikijs/langs/dotenv")
+  },
+  themes: {
+    "github-light": () => import("@shikijs/themes/github-light"),
+    "dark-plus": () => import("@shikijs/themes/dark-plus")
+  },
+  engine: () => createJavaScriptRegexEngine()
+});
 
 export async function getShikiHighlighter(): Promise<ShikiHighlighterLike> {
   if (cachedHighlighterPromise) return cachedHighlighterPromise;
 
   cachedHighlighterPromise = (async () => {
-    const shiki = (await import("shiki")) as unknown as Record<string, unknown>;
-
-    const themePairs: Array<[ThemeName, ThemeName]> = [
-      ["github-light", "dark-plus"],
-      ["vitesse-light", "dark-plus"],
-    ];
-
-    let lastErr: unknown = null;
-    for (const pair of themePairs) {
-      try {
-        const highlighter = await createHighlighterWithThemes(shiki, pair);
-        cachedThemePair = pair;
-        return highlighter;
-      } catch (e) {
-        lastErr = e;
-      }
-    }
-    throw new Error(
-      `Failed to initialize Shiki highlighter.${lastErr ? ` ${String(lastErr)}` : ""}`,
-    );
+    const themePair: [ThemeName, ThemeName] = ["github-light", "dark-plus"];
+    const highlighter = await createHighlighter({
+      themes: themePair,
+      langs: ["json", "yaml", "dotenv"]
+    });
+    cachedThemePair = themePair;
+    return highlighter;
   })();
 
   return cachedHighlighterPromise;
@@ -85,7 +68,7 @@ function normalizeTokenLine(line: unknown): ShikiTokenLine {
 export async function shikiTokenizeLines(opts: {
   code: string;
   theme: ThemeName;
-  lang?: string;
+  lang?: ShikiLang;
 }): Promise<ShikiTokenLine[]> {
   const lang = opts.lang ?? "json";
   const highlighter = await getShikiHighlighter();
@@ -118,11 +101,10 @@ export async function shikiTokenizeLines(opts: {
 export async function shikiTokenizeLinesForMode(opts: {
   code: string;
   mode: "light" | "dark";
-  lang?: string;
+  lang?: ShikiLang;
 }): Promise<ShikiTokenLine[]> {
   await getShikiHighlighter();
   const pair = getCachedShikiThemePair();
-  const theme: ThemeName =
-    opts.mode === "light" ? (pair?.[0] ?? "github-light") : (pair?.[1] ?? "github-dark");
+  const theme: ThemeName = opts.mode === "light" ? (pair?.[0] ?? "github-light") : (pair?.[1] ?? "dark-plus");
   return shikiTokenizeLines({ code: opts.code, theme, lang: opts.lang });
 }

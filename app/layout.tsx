@@ -1,17 +1,22 @@
 import type { ReactNode } from "react";
-import { Space_Grotesk, Source_Code_Pro } from "next/font/google";
+import {
+  Geist,
+  JetBrains_Mono
+} from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 
-const displayFont = Space_Grotesk({
+const sansFont = Geist({
   subsets: ["latin"],
-  variable: "--font-display"
+  weight: ["400", "500"],
+  variable: "--geist-sans"
 });
 
-const monoFont = Source_Code_Pro({
+const monoFont = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-mono"
+  weight: ["400", "500"],
+  variable: "--jetbrains-mono"
 });
 
 export const metadata = {
@@ -31,7 +36,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${displayFont.variable} ${monoFont.variable}`}
+      className={`${sansFont.variable} ${monoFont.variable}`}
       data-theme="dark"
       data-theme-pref="dark"
       style={{ colorScheme: "dark" }}
@@ -41,13 +46,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var d=document.documentElement;d.setAttribute('data-theme','dark');d.setAttribute('data-theme-pref','dark');d.style.colorScheme='dark';}}catch(e){}})();"
+              "(function(){try{var d=document.documentElement;d.setAttribute('data-theme','dark');d.setAttribute('data-theme-pref','dark');d.style.colorScheme='dark';}catch(e){}})();"
           }}
         />
       </head>
       <body className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)]">
         <SiteHeader />
-        <div className="relative isolate overflow-hidden dark-circuit-wrapper">
+        <div className="relative isolate overflow-hidden bg-[var(--bg)]">
           <div className="relative z-10 mx-auto w-full px-10">
             {children}
             <SiteFooter />

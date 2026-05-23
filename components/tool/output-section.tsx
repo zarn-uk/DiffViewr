@@ -1,11 +1,34 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import type { CompareResult } from "@/lib/diff/types";
-import { VisualComparePanel } from "@/components/compare/visual-compare-panel";
 import { shikiTokenizeLines, type ShikiTokenLine } from "@/lib/shiki/getHighlighter";
 
-type Props = {
+type VisualComparePanelProps = {
+  result: CompareResult;
+};
+
+const VisualComparePanel = dynamic<VisualComparePanelProps>(
+  () =>
+    import("@/components/compare/visual-compare-panel").then(
+      (mod) => mod.VisualComparePanel
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="rounded-xl border border-[var(--border)] p-4 text-[14px] text-[var(--muted)]"
+        role="status"
+        aria-live="polite"
+      >
+        Loading visual compare...
+      </div>
+    )
+  }
+);
+
+export type OutputSectionProps = {
   panelClass: string;
   inputClass: string;
   buttonBase: string;
@@ -31,7 +54,7 @@ export function OutputSection({
   setActiveTab,
   resultText,
   compare
-}: Props) {
+}: OutputSectionProps) {
   const isOutputVisible = Boolean(resultText || compare);
   const hasResultText = Boolean(resultText?.length);
 
@@ -54,7 +77,7 @@ export function OutputSection({
   const [tokens, setTokens] = useState<ShikiTokenLine[] | null>(null);
 
   useEffect(() => {
-    if (!resultText) {
+    if (activeTab !== "result" || !resultText) {
       setTokens(null);
       return;
     }
@@ -68,7 +91,7 @@ export function OutputSection({
     return () => {
       active = false;
     };
-  }, [resultText]);
+  }, [activeTab, resultText]);
 
   function renderTokenLine(tokens: ShikiTokenLine | undefined, fallbackText: string) {
     if (!tokens) return <span className="json-code whitespace-pre">{fallbackText}</span>;
@@ -113,31 +136,40 @@ export function OutputSection({
 
   if (!isOutputVisible) return null;
 
+  const tabBase =
+    "px-3 py-2 border-b-2 border-transparent font-sans text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+  const activeTabClass = `${tabBase} border-cyan-400 text-[var(--text)]`;
+  const inactiveTabClass = `${tabBase} text-[var(--muted)] hover:text-[var(--text)]`;
+  const ghostActionClass =
+    "px-3 py-2 rounded-lg border border-[var(--border)] bg-transparent font-sans text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+  const primaryActionClass =
+    "px-3 py-2 rounded-lg border border-transparent bg-cyan-400 font-sans text-sm font-medium text-[#0c0e11] transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:cursor-not-allowed disabled:opacity-60";
+
   return (
     <section className={`${panelClass} mt-4`}>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)]">
+        <div className="flex flex-wrap gap-1">
           <button
-            className={activeTab === "compare" ? `${buttonPrimary} active` : buttonBase}
+            className={activeTab === "compare" ? activeTabClass : inactiveTabClass}
             onClick={() => setActiveTab("compare")}
             type="button"
           >
             Visual Compare
           </button>
           <button
-            className={activeTab === "result" ? `${buttonPrimary} active` : buttonBase}
+            className={activeTab === "result" ? activeTabClass : inactiveTabClass}
             onClick={() => setActiveTab("result")}
             type="button"
           >
             Reordered Result
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          <button className={buttonBase} onClick={onStartAgain} type="button">
+        <div className="flex items-center gap-2 pb-2">
+          <button className={ghostActionClass} onClick={onStartAgain} type="button">
             Start again
           </button>
           {hasResultText ? (
-            <button className={buttonBase} onClick={onCopyResult} type="button" disabled={!canCopy}>
+            <button className={primaryActionClass} onClick={onCopyResult} type="button" disabled={!canCopy}>
               Copy aligned B
             </button>
           ) : null}
@@ -146,8 +178,8 @@ export function OutputSection({
 
       {activeTab === "result" ? (
         <>
-          <h2 className="text-[18px] text-[var(--muted)] font-semibold mb-2">4) Reordered Result</h2>
-          <div className="mb-2 text-[14px] text-[var(--muted)] leading-relaxed">
+          <h2 className="mb-2 font-sans text-[18px] font-normal leading-tight tracking-tight text-[var(--muted)]">4) Reordered Result</h2>
+          <div className="mb-2 font-sans text-[14px] font-normal leading-relaxed tracking-normal text-[var(--muted)]">
             This is <strong>B</strong> with only the <strong>key order</strong> adjusted to match{" "}
             <strong>A</strong> (diff-friendly). Values are unchanged.
           </div>
@@ -169,7 +201,6 @@ export function OutputSection({
         </>
       ) : (
         <>
-          <h2 className="text-[18px] text-[var(--muted)] font-semibold mb-2">4) Visual Compare</h2>
           {compare ? (
             <VisualComparePanel result={compare} />
           ) : (

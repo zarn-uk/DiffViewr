@@ -15,7 +15,7 @@
   --warn: #f59e0b;
   --danger: #f59e0b;
   --ok: #34d399;
-  --shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   --radius: 12px;
   --logo-diff: #eef1ff;
   --logo-viewr: #e8ff47;
@@ -23,9 +23,12 @@
   --logo-divider-0: #30cfd0;
   --logo-divider-1: #22d3ee;
   --logo-tick: #30cfd0;
-  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  --sans: var(--font-display), "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+  --font-sans: var(--geist-sans, "Geist Sans"), "Helvetica Neue", Helvetica,
+    Arial, sans-serif;
+  --font-mono: var(--jetbrains-mono, "JetBrains Mono"), "Source Code Pro",
+    "Fira Code", monospace;
+  --sans: var(--font-sans);
+  --mono: var(--font-mono);
 }
 
 html[data-theme="light"] {
@@ -41,7 +44,7 @@ html[data-theme="light"] {
   --warn: #d97706;
   --danger: #c2410c;
   --ok: #15803d;
-  --shadow: 0 12px 30px rgba(47, 41, 33, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
   --logo-diff: #1f2937;
   --logo-viewr: #6d28d9;
   --logo-tagline: #475569;
@@ -70,17 +73,7 @@ html[data-theme="dark"] {
 }
 
 body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(ellipse at center, rgba(0,212,170,0.06) 0%, transparent 65%),
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-repeat: no-repeat, repeat, repeat;
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-  pointer-events: none;
-  z-index: 0;
+  content: none;
 }
 
 * {
@@ -115,12 +108,6 @@ body::before {
   font-weight: 500;
 }
 
-.site-menu[open] .site-menu-trigger,
-.site-menu-trigger:hover {
-  border-color: var(--border);
-  background: color-mix(in srgb, var(--panel) 85%, transparent);
-}
-
 .site-menu-panel {
   position: absolute;
   left: 0;
@@ -149,11 +136,37 @@ body::before {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
+/* Primary navigation links: animated underline on hover/focus instead of outline */
+a.site-menu-trigger,
+nav a {
+  outline: none;
+  position: relative;
+}
+
+a.site-menu-trigger::after,
+nav a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: rgb(34 211 238 / 0.4);
+  transition: width 200ms ease;
+}
+
+a.site-menu-trigger:hover::after,
+a.site-menu-trigger:focus-visible::after,
+nav a:hover::after,
+nav a:focus-visible::after {
+  width: 100%;
+}
+
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: var(--sans);
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
 
@@ -162,28 +175,6 @@ body {
 
 html[data-theme="dark"] body {
   background: var(--bg);
-}
-
-.dark-circuit-wrapper {
-  min-height: 100%;
-  width: 100%;
-  position: relative;
-  background-color: transparent;
-}
-
-.dark-circuit-background {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 80% 50% at 50% 120%,
-    rgba(48, 207, 208, 0.15),
-    transparent
-  );
 }
 
 /* From Uiverse.io by adamgiebl */
@@ -235,54 +226,33 @@ html[data-theme="dark"] body {
 
 .cyberpunk-button {
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel) 78%, transparent);
+  background: var(--panel);
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
 }
 
 .cyberpunk-button:hover {
-  border-color: #00d4aa;
-  background: color-mix(in srgb, var(--panel) 65%, #00d4aa 8%);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 .cyberpunk-button.primary {
-  border-color: #00d4aa;
-  background: color-mix(in srgb, var(--panel) 64%, #00d4aa 14%);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--panel);
   color: var(--text);
 }
 
 .cyberpunk-button.cta {
   border: 0;
-  background: linear-gradient(90deg, #00d4aa, #22d3ee);
-  color: #06110f;
-  box-shadow: 0 10px 30px rgba(0, 212, 170, 0.22);
+  background: #22d3ee;
+  color: #0c0e11;
 }
 
 .cyberpunk-button.cta:hover {
-  box-shadow: 0 14px 36px rgba(0, 212, 170, 0.3);
-}
-
-.cyberpunk-button.cta.prominent {
-  animation: cyberPulse 2s ease-in-out infinite;
-  box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3), 0 0 50px rgba(34, 211, 238, 0.18);
-}
-
-@keyframes cyberPulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3), 0 0 50px rgba(34, 211, 238, 0.18);
-  }
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 14px 36px rgba(0, 212, 170, 0.38), 0 0 70px rgba(34, 211, 238, 0.24);
-  }
+  opacity: 0.9;
 }
 
 .cyberpunk-button:focus-visible {
-  outline: 3px solid #00d4aa;
-  outline-offset: 3px;
-  box-shadow: 0 0 0 6px rgba(0, 212, 170, 0.18);
+  outline: none;
 }
 
 .cyberpunk-button:disabled {
@@ -294,8 +264,7 @@ html[data-theme="dark"] body {
 }
 
 .cyberpunk-button.active {
-  box-shadow: 0 0 18px rgba(0, 212, 170, 0.24);
-  border-color: #00d4aa;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 a {
@@ -343,7 +312,7 @@ a {
 }
 
 .panel {
-  background: linear-gradient(180deg, var(--panel), var(--panel2));
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -420,8 +389,21 @@ input {
 .input:focus,
 .select:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(48, 207, 208, 0.2);
+  border-color: rgba(34, 211, 238, 0.6);
+  box-shadow: none;
+}
+
+#reference-json:focus,
+#target-json:focus,
+#reference-json:focus-visible,
+#target-json:focus-visible {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.panel-wrapper:focus-within {
+  border-color: rgba(34, 211, 238, 0.3);
 }
 
 .input,
@@ -696,8 +678,7 @@ input {
 
 .json-line-active {
   outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
-  animation: jsonLinePulse 650ms ease-out 1;
+  animation: none;
 }
 
 .json-line.same {
@@ -722,10 +703,10 @@ input {
 
 @keyframes jsonLinePulse {
   from {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 20%, transparent);
+    outline-offset: 0;
   }
   to {
-    box-shadow: 0 0 0 6px transparent;
+    outline-offset: 0;
   }
 }
 
@@ -776,22 +757,3 @@ input {
   }
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, 18px, 0);
-  }
-}
-
-.animate-float {
-  animation: float 10s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-float {
-    animation: none;
-  }
-}

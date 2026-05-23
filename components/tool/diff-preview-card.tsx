@@ -180,7 +180,7 @@ const paired = aLines.map((a, idx) => ({ a, b: bLines[idx] }));
 export function DiffPreviewCard() {
   return (
     <div
-      className="rounded-xl border border-[var(--border)] bg-[var(--panel)] overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.28)]"
+      className="rounded-xl border border-[var(--border)] bg-[var(--panel)] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
       role="img"
       aria-label="DiffViewr showing a minimal side-by-side JSON comparison preview"
     >

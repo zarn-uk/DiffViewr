@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CompareResult, DiffNode, DiffKind } from "@/lib/diff/types";
 import { shikiTokenizeLinesForMode, type ShikiTokenLine } from "@/lib/shiki/getHighlighter";
 import { DiffSummaryBar } from "@/components/compare/diff-summary-bar";
-import { DiffLegend } from "@/components/compare/diff-legend";
 
 function collectPaths(node: DiffNode, paths: string[] = []) {
   paths.push(node.path);
@@ -45,11 +44,11 @@ function buildKindMaps(root: DiffNode) {
 function kindClass(kind?: DiffKind) {
   switch (kind) {
     case "missing":
-      return "json-line missing";
+      return "json-line missing border-l-2 border-red-400/60";
     case "extra":
-      return "json-line extra";
+      return "json-line extra border-l-2 border-emerald-400/60";
     case "changed":
-      return "json-line changed";
+      return "json-line changed border-l-2 border-amber-400/60";
     case "type_mismatch":
       return "json-line mismatch";
     default:
@@ -167,6 +166,7 @@ type ScrollMetrics = {
 };
 
 type ResolvedTheme = "light" | "dark";
+type ActiveDiffKind = Exclude<DiffKind, "same">;
 
 function diffKindPriority(kind?: DiffKind) {
   switch (kind) {
@@ -723,20 +723,52 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
 
   const [activeChangePos, setActiveChangePos] = useState(0);
   const [activeLine, setActiveLine] = useState<number | null>(null);
+  const [activeFilters, setActiveFilters] = useState<ActiveDiffKind[]>([
+    "missing",
+    "extra",
+    "changed",
+    "type_mismatch"
+  ]);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const activeFilterSet = useMemo(() => new Set<ActiveDiffKind>(activeFilters), [activeFilters]);
+
+  const toggleFilter = useCallback((kind: ActiveDiffKind) => {
+    setActiveFilters((current) =>
+      current.includes(kind)
+        ? current.filter((item) => item !== kind)
+        : [...current, kind]
+    );
+  }, []);
 
   useEffect(() => {
     rowRefs.current = new Array(aligned.length).fill(null);
   }, [aligned.length]);
 
+  const isVisibleLine = useCallback(
+    (line: LinePair) => {
+      const kind = inferBetweenKind(line);
+      return !kind || kind === "same" || activeFilterSet.has(kind as ActiveDiffKind);
+    },
+    [activeFilterSet, inferBetweenKind]
+  );
+
+  const visibleLineIndices = useMemo(() => {
+    const out: number[] = [];
+    for (let i = 0; i < aligned.length; i += 1) {
+      if (isVisibleLine(aligned[i])) out.push(i);
+    }
+    return out;
+  }, [aligned, isVisibleLine]);
+
   const changeLineIndices = useMemo(() => {
     const out: number[] = [];
     for (let i = 0; i < aligned.length; i += 1) {
       const kind = inferBetweenKind(aligned[i]);
-      if (kind && kind !== "same") out.push(i);
+      if (kind && kind !== "same" && activeFilterSet.has(kind as ActiveDiffKind)) out.push(i);
     }
     return out;
-}, [aligned, inferBetweenKind]);
+}, [activeFilterSet, aligned, inferBetweenKind]);
 
   useEffect(() => {
     if (changeLineIndices.length === 0) {
@@ -760,47 +792,18 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
     }
 }, [changeLineIndices]);
 
-  const gutter = useMemo(() => {
-    const changeSet = new Set(changeLineIndices);
-    return (
-      <div
-        className="py-[10px] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)]"
-        style={{ fontFamily: "var(--mono)", fontSize: 14, lineHeight: 1.6 }}
-      >
-        {aligned.map((line, idx) => {
-          const isChange = changeSet.has(idx);
-          const kind = isChange ? inferBetweenKind(line) : undefined;
-          const color = diffKindColor(kind);
-          return (
-            <div key={`g-${idx}`} className="relative flex items-center justify-center py-[2px]">
-              <span className="text-transparent select-none" aria-hidden="true">
-                .
-              </span>
-              {isChange ? (
-                <div
-                  className="absolute w-[6px] h-[12px] rounded-md"
-                  style={{ background: color }}
-                  aria-hidden="true"
-                />
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }, [aligned, inferBetweenKind, changeLineIndices]);
-
   const scrollbar = useMemo(() => {
     const clientHeight = metrics.clientHeight || 1;
-    const totalLines = Math.max(1, aligned.length);
+    const totalLines = Math.max(1, visibleLineIndices.length);
 
     const bucketCount = Math.min(260, Math.max(24, Math.floor(clientHeight / 2)));
     const buckets: { a?: DiffKind; b?: DiffKind }[] = Array.from({ length: bucketCount }, () => ({}));
 
-    for (let i = 0; i < aligned.length; i += 1) {
-      const bucket = Math.min(bucketCount - 1, Math.floor((i / totalLines) * bucketCount));
-      const aKind = inferAForLine(aligned[i]);
-      const bKind = inferBForLine(aligned[i]);
+    for (let visiblePos = 0; visiblePos < visibleLineIndices.length; visiblePos += 1) {
+      const lineIdx = visibleLineIndices[visiblePos];
+      const bucket = Math.min(bucketCount - 1, Math.floor((visiblePos / totalLines) * bucketCount));
+      const aKind = inferAForLine(aligned[lineIdx]);
+      const bKind = inferBForLine(aligned[lineIdx]);
       if (diffKindPriority(aKind) > diffKindPriority(buckets[bucket].a)) buckets[bucket].a = aKind;
       if (diffKindPriority(bKind) > diffKindPriority(buckets[bucket].b)) buckets[bucket].b = bKind;
     }
@@ -839,10 +842,7 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
         </div>
       </div>
     );
-  }, [metrics, aligned, inferAForLine, inferBForLine]);
-
-  const buttonBase =
-    "px-3 py-2 rounded-lg border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] text-sm hover:border-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:opacity-60 disabled:cursor-not-allowed";
+  }, [metrics, visibleLineIndices, aligned, inferAForLine, inferBForLine]);
 
   function renderTokenLine(tokens: ShikiTokenLine | undefined, fallbackText: string) {
     if (!tokens) return <span className="json-code whitespace-pre">{fallbackText}</span>;
@@ -859,71 +859,20 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <img
-            src="/brand/diffviewr-logo.svg"
-            width={18}
-            height={18}
-            className="w-[18px] h-[18px]"
-            alt=""
-            aria-hidden="true"
-            loading="eager"
-          />
-          <div className="text-sm font-semibold text-[var(--text)]">
-            Visual Compare
-            <span className="ml-2 text-[14px] font-normal text-[var(--muted)]">
-              DiffViewr (local-only)
-            </span>
-          </div>
-        </div>
-      </div>
-      <DiffSummaryBar summary={result.summary} />
-      <DiffLegend />
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-[14px] text-[var(--muted)]">
-          {changeLineIndices.length ? (
-            <span>
-              Change {activeChangePos + 1} / {changeLineIndices.length}
-            </span>
-          ) : (
-            <span>No differences</span>
-          )}
-          {!shouldHighlight ? (
-            <span className="ml-2 opacity-80">(syntax highlighting disabled for large inputs)</span>
-          ) : aTokens && bTokens ? (
-            <span className="ml-2 opacity-80">(syntax highlighting: on)</span>
-          ) : (
-            <span className="ml-2 opacity-80">(loading syntax highlighting…)</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            className={buttonBase}
-            onClick={() => goToChange(activeChangePos - 1)}
-            type="button"
-            disabled={changeLineIndices.length === 0 || activeChangePos <= 0}
-          >
-            Prev
-          </button>
-          <button
-            className={buttonBase}
-            onClick={() => goToChange(activeChangePos + 1)}
-            type="button"
-            disabled={changeLineIndices.length === 0 || activeChangePos >= changeLineIndices.length - 1}
-          >
-            Next
-          </button>
-        </div>
-      </div>
-      <div ref={scrollRef} className="rounded-xl border border-[var(--border)] relative w-full overflow-visible">
+      <DiffSummaryBar
+        summary={result.summary}
+        activeFilters={activeFilterSet}
+        onToggleFilter={toggleFilter}
+      />
+      <div ref={scrollRef} className="rounded-xl border border-[var(--border)] relative w-full overflow-visible pb-20">
         <div className="flex gap-3 min-w-[820px]">
           <div className="flex-1 min-w-0 overflow-hidden">
             <div className="sticky top-0 z-10 px-3 py-2 text-xs uppercase text-[var(--muted)] border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)]">
               Template (A)
             </div>
             <div className="json-view w-full">
-              {aligned.map((line, idx) => {
+              {visibleLineIndices.map((idx) => {
+                const line = aligned[idx];
                 const inferred = line.aStatus
                   ? line.aStatus
                    : line.aPath
@@ -947,29 +896,13 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
               })}
             </div>
 </div>
-           {/* <div className="flex-none w-[10px] overflow-hidden">
-             <div
-               className="sticky top-0 z-10 px-1 py-2 text-xs uppercase text-[var(--muted)] border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)]"
-               aria-hidden="true"
-             >
-               &nbsp;
-</div>
-          </div> */}
-          <div className="flex-none w-[10px] overflow-hidden">
-            <div
-              className="sticky top-0 z-10 px-3 py-2 text-xs uppercase text-[var(--muted)] border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)]"
-              aria-hidden="true"
-            >
-              <span className="text-transparent select-none">Template</span>
-            </div>
-            {gutter}
-          </div>
           <div className="flex-1 min-w-0 overflow-hidden">
             <div className="sticky top-0 z-10 px-3 py-2 text-xs uppercase text-[var(--muted)] border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)]">
               Aligned (B)
             </div>
             <div className="json-view w-full">
-              {aligned.map((line, idx) => {
+              {visibleLineIndices.map((idx) => {
+                const line = aligned[idx];
                 const inferred = line.bStatus
                   ? line.bStatus
                   : line.bPath
@@ -986,9 +919,35 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
                 );
               })}
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+           </div>
+         </div>
+       </div>
+
+       {changeLineIndices.length > 0 && (
+         <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_92%,transparent)] backdrop-blur-sm rounded-full px-0.5 md:px-1 py-1 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+           <button
+             type="button"
+             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] text-[var(--muted)] hover:bg-[var(--panel)] hover:text-[var(--text)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+             onClick={() => goToChange(activeChangePos - 1)}
+             disabled={activeChangePos <= 0}
+             aria-label="Previous change"
+           >
+             ← Prev
+           </button>
+           <span className="font-mono text-[12px] text-[var(--muted)] px-2 border-x border-[var(--border)]">
+             {activeChangePos + 1} / {changeLineIndices.length}
+           </span>
+           <button
+             type="button"
+             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[12px] text-[var(--text)] font-medium hover:bg-[var(--panel)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+             onClick={() => goToChange(activeChangePos + 1)}
+             disabled={activeChangePos >= changeLineIndices.length - 1}
+             aria-label="Next change"
+           >
+             Next →
+           </button>
+         </div>
+       )}
+     </div>
+   );
+ }

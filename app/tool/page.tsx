@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { detectIndentFromText, stringifyLikeInput } from "@/lib/stringifyLikeInput";
 import { compareJson } from "@/lib/diff/compareJson";
 import { buildSummary } from "@/lib/diff/buildSummary";
 import type { CompareResult } from "@/lib/diff/types";
 import { JsonInputGrid } from "@/components/tool/json-input-grid";
-import { OutputSection } from "@/components/tool/output-section";
-import { RatingModal } from "@/components/tool/rating-modal";
+import type { OutputSectionProps } from "@/components/tool/output-section";
+import type { RatingModalProps } from "@/components/tool/rating-modal";
 import { detectFormat } from "@/lib/detectFormat";
 import { validateInput, type ValidationResult } from "@/lib/validateInput";
 import { reorderByTemplate } from "@/lib/reorderByTemplate";
@@ -18,10 +19,55 @@ type SortResult = {
   resultText: string;
 };
 
+const OutputSection = dynamic<OutputSectionProps>(
+  () => import("@/components/tool/output-section").then((mod) => mod.OutputSection),
+  {
+    ssr: false,
+    loading: () => (
+      <section
+        className="mt-4 p-8 text-[14px] text-[var(--muted)]"
+        role="status"
+        aria-live="polite"
+      >
+        Preparing results...
+      </section>
+    )
+  }
+);
 
+const RatingModal = dynamic<RatingModalProps>(
+  () => import("@/components/tool/rating-modal").then((mod) => mod.RatingModal),
+  {
+    ssr: false,
+    loading: () => null
+  }
+);
+
+/** Isolates `useSearchParams()` inside a `<Suspense>` boundary so Next.js can
+ *  statically generate the `/tool` page without a CSR bail-out.
+ *  The inner effect reads the `sample` query param exactly once and triggers
+ *  `onLoadSample` — matching the original component's behaviour. */
+function SearchParamsInit({
+  onLoadSample,
+  children,
+}: {
+  onLoadSample: () => void;
+  children: ReactNode;
+}) {
+  const searchParams = useSearchParams();
+  const sampleLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (sampleLoadedRef.current || searchParams.get("sample") !== "1") return;
+    sampleLoadedRef.current = true;
+    onLoadSample();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onLoadSample, searchParams]);
+
+  return <>{children}</>;
+}
 
 export default function Page() {
-  const searchParams = useSearchParams();
   const [refText, setRefText] = useState<string>("");
   const [targetText, setTargetText] = useState<string>("");
   const { reorderArrays, toggleReorderArrays } = useReorderArrays();
@@ -44,7 +90,6 @@ export default function Page() {
   const isOutputVisible = Boolean(result || compare);
   const bothHaveContent = Boolean(refText.trim() && targetText.trim());
   const isResultsOnly = viewMode === "results" && isOutputVisible;
-  const sampleLoadedFromQuery = useRef(false);
 
   const canCopy = useMemo(
     () => Boolean(result?.resultText?.length),
@@ -66,13 +111,6 @@ export default function Page() {
   useEffect(() => {
     if (!isOutputVisible) setInputsCollapsed(false);
   }, [isOutputVisible]);
-
-  useEffect(() => {
-    if (sampleLoadedFromQuery.current || searchParams.get("sample") !== "1") return;
-    sampleLoadedFromQuery.current = true;
-    onLoadSample();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -174,7 +212,7 @@ export default function Page() {
     }
   }
 
-  function onLoadSample() {
+  const onLoadSample = useCallback(() => {
     clearMessages();
     setRefText(JSON.stringify(SAMPLE.reference, null, 2));
     setTargetText(JSON.stringify(SAMPLE.target, null, 2));
@@ -190,7 +228,7 @@ export default function Page() {
       const element = document.getElementById("tool-input");
       element?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
-  }
+  }, []);
 
   function sortAndCompare(options?: { reorderArrays?: boolean }) {
     const effectiveReorderArrays = options?.reorderArrays ?? reorderArrays;
@@ -279,23 +317,25 @@ const SAMPLE = {
 
 const panelClass = "p-8";
 const inputClass =
-  "w-full rounded-xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text)] font-mono text-[14px] leading-relaxed p-3 focus:outline-none focus:border-[var(--accent)]";
+  "w-full rounded-xl border-0 bg-[var(--panel)] text-[var(--text)] font-mono text-[14px] leading-relaxed p-3 focus:outline-none";
 const jsonInputSizeClass =
   isOutputVisible
     ? "min-h-[160px] max-h-[220px]"
     : "min-h-[520px]";
 const buttonBase =
-  "cyberpunk-button px-3 py-2 rounded-lg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4aa] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+  "cyberpunk-button px-3 py-2 rounded-lg font-sans text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4aa] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
 const buttonPrimary =
-  "cyberpunk-button primary px-3 py-2 rounded-lg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4aa] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
-const ctaButton =
-  "cyberpunk-button cta inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-[15px] font-semibold text-[#06110f] " +
-  "transition-all hover:-translate-y-px active:translate-y-0 " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4aa] " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+  "cyberpunk-button primary px-3 py-2 rounded-lg font-sans text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4aa] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
+  const ctaButton =
+    "inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] px-5 py-3 font-sans text-[15px] font-medium text-[var(--muted)] " +
+    "cursor-not-allowed transition-colors duration-200 enabled:cursor-pointer enabled:border-transparent enabled:bg-cyan-400 enabled:text-[#0c0e11] " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4aa] " +
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]";
 
   return (
-    <main id="main" className="py-4 flex flex-col">
+    <Suspense fallback={null}>
+      <SearchParamsInit onLoadSample={onLoadSample}>
+        <main id="main" className="py-4 flex flex-col">
       <a
         href="#results"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-[var(--panel)] focus:px-3 focus:py-2 focus:text-sm focus:text-[var(--text)] focus:shadow-[var(--shadow)]"
@@ -303,38 +343,39 @@ const ctaButton =
         Skip to results
       </a>
 
+      <div className="flex gap-6 items-start w-full">
+        <div className="flex-1 min-w-0">
       {!isResultsOnly && (
         <>
           {/* Tool Section - full width */}
           <div className="w-full bg-[var(--bg)] px-4 sm:px-6 lg:px-10">
             {/* Visual Anchor */}
-            <div id="tool-input" className="mt-8 mb-8">
-              <div className="w-full h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent mb-6"></div>
-              <div className="mx-auto max-w-3xl text-center">
-                <h1 className="font-display text-[clamp(2rem,4vw,3rem)] font-bold leading-tight text-[var(--text)]">
-                  Paste Template A. Paste Target B.
-                </h1>
-                <p className="mt-3 text-[16px] leading-7 text-[var(--muted)]">
-                  DiffViewr aligns key order and shows only the values that actually changed.
-                </p>
-              </div>
-              <div className="mx-auto mt-4 mb-2 flex max-w-3xl items-center justify-between px-1">
-                <span className="font-mono text-[11px] text-[var(--muted)]">
-                  Supports:
-                </span>
-                <div className="flex gap-2">
-                  {["JSON", "YAML", ".ENV"].map((format) => (
-                    <span
-                      key={format}
-                      className="rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] px-3 py-1 font-mono text-[11px] text-[var(--muted)]"
-                    >
-                      {format}
-                    </span>
-                  ))}
+            <div id="tool-input">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] bg-[var(--panel)] mb-0">
+                <div className="flex items-center gap-3">
+                  <h1 className="font-sans text-[15px] font-medium text-[var(--text)] tracking-tight">
+                    Template A → Target B
+                  </h1>
+                  <span className="text-[var(--border)]">·</span>
+                  <p className="font-mono text-[12px] text-[var(--muted)]">
+                    DiffViewr aligns key order and shows only what changed
+                  </p>
                 </div>
-                <span className="font-mono text-[11px] text-[var(--muted)]">
-                  100% in-browser
-                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-2">
+                    {["JSON", "YAML", ".ENV"].map((format) => (
+                      <span
+                        key={format}
+                        className="rounded-full border border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_80%,transparent)] px-3 py-1 font-mono text-[11px] text-[var(--muted)]"
+                      >
+                        {format}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="font-mono text-[11px] text-[var(--muted)]">
+                    100% in-browser
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -384,7 +425,11 @@ const ctaButton =
                     <span>Reorder arrays to match A</span>
                   </label>
                 ) : null}
-
+              </div>
+              <div className="sticky bottom-0 z-20 border-t border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] backdrop-blur-sm px-6 py-3 flex items-center justify-between gap-4">
+                <p className="font-mono text-[12px] text-[var(--muted)] hidden sm:block">
+                  Tip: Ctrl+Enter (or Cmd+Enter)
+                </p>
                 <button
                   className={ctaButton}
                   onClick={() => sortAndCompare({ reorderArrays })}
@@ -397,15 +442,13 @@ const ctaButton =
                   <span aria-hidden="true">⇅</span>
                   Compare configs
                 </button>
-                {!bothHaveContent && (
-                  <p id="compare-help" className="text-[14px] text-[var(--muted)] mt-1" aria-live="polite">
-                    Paste Template A and Target B above to compare
-                  </p>
-                )}
-                <div className="text-[14px] text-[var(--muted)] mt-1">
-                  Tip: Press Ctrl+Enter (or Cmd+Enter) when both text areas are filled
-                </div>
+                <div className="w-32 hidden sm:block" />
               </div>
+              {!bothHaveContent && (
+                <p id="compare-help" className="sr-only" aria-live="polite">
+                  Paste Template A and Target B above to compare
+                </p>
+              )}
 
               {error ? (
                 <div
@@ -449,6 +492,25 @@ const ctaButton =
           </section>
         </div>
       )}
+        </div>
+
+        <aside
+          id="ad-rail"
+          className="hidden xl:flex flex-col gap-4 w-[300px] shrink-0 pt-4 sticky top-20"
+        >
+          <div className="border border-dashed border-[var(--border)] rounded-lg flex items-center justify-center min-h-[250px] bg-[color-mix(in_srgb,var(--panel)_40%,transparent)]">
+            <span className="font-mono text-[10px] uppercase tracking-[1.6px] text-[var(--muted)] opacity-30">
+              300&times;250
+            </span>
+          </div>
+
+          <div className="border border-dashed border-[var(--border)] rounded-lg flex items-center justify-center min-h-[600px] bg-[color-mix(in_srgb,var(--panel)_40%,transparent)]">
+            <span className="font-mono text-[10px] uppercase tracking-[1.6px] text-[var(--muted)] opacity-30">
+              300&times;600
+            </span>
+          </div>
+        </aside>
+      </div>
 
       <RatingModal
         open={showRatingModal}
@@ -467,7 +529,9 @@ const ctaButton =
         buttonPrimary={buttonPrimary}
       />
 
-    </main>
+        </main>
+      </SearchParamsInit>
+    </Suspense>
   );
 }
 
