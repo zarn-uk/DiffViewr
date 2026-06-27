@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const isToolPage = pathname === "/tool" || pathname === "/tool/";
 
   function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
     if (pathname === "/") {
@@ -42,12 +43,14 @@ export function SiteHeader() {
            </nav>
         </div>
 
-        <Link
-          href="/tool/"
-          className="cyberpunk-button cta inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-3.5 py-2 font-sans text-[13px] font-medium focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] sm:px-5 sm:text-[15px]"
-        >
-          Compare configs
-        </Link>
+        {!isToolPage ? (
+          <Link
+            href="/tool/"
+            className="cyberpunk-button cta inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-3.5 py-2 font-sans text-[13px] font-medium focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] sm:px-5 sm:text-[15px]"
+          >
+            Compare configs
+          </Link>
+        ) : null}
       </div>
     </header>
   );
