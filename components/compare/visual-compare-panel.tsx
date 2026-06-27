@@ -862,7 +862,9 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
           className="max-h-[70vh] min-h-[360px] w-full overflow-auto rounded-xl border border-[var(--border)]"
         >
           <div className="flex w-full min-w-0 gap-0 md:gap-3">
-          <div className={`${mobilePane === "a" ? "block" : "hidden"} min-w-0 flex-1 basis-0 overflow-x-auto md:block`}>
+          <div
+            className={`${mobilePane === "a" ? "block" : "hidden"} min-w-0 flex-1 basis-0 overflow-hidden md:block`}
+          >
             <div style={{ minWidth: paneContentWidths.a }}>
               <div className="sticky top-0 z-10 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)] px-3 py-2 text-xs uppercase text-[var(--muted)]">
                 Template (A)
@@ -909,7 +911,9 @@ export function VisualComparePanel({ result }: { result: CompareResult }) {
               </div>
             </div>
           </div>
-          <div className={`${mobilePane === "b" ? "block" : "hidden"} min-w-0 flex-1 basis-0 overflow-x-auto md:block`}>
+          <div
+            className={`${mobilePane === "b" ? "block" : "hidden"} min-w-0 flex-1 basis-0 overflow-hidden md:block`}
+          >
             <div style={{ minWidth: paneContentWidths.b }}>
               <div className="sticky top-0 z-10 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--panel)_75%,transparent)] px-3 py-2 text-xs uppercase text-[var(--muted)]">
                 Aligned (B)

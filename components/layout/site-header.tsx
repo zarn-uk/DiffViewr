@@ -4,6 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
+const formatLinks = [
+  { href: "/yaml-diff/", label: "YAML" },
+  { href: "/json-diff/", label: "JSON" },
+  { href: "/env-diff/", label: ".ENV" }
+];
+
 export function SiteHeader() {
   const pathname = usePathname();
   const isToolPage = pathname === "/tool" || pathname === "/tool/";
@@ -33,14 +39,34 @@ export function SiteHeader() {
             </span>
           </Link>
 
-           <nav aria-label="Primary" className="hidden md:flex items-center gap-1 text-[14px] leading-none">
-             <Link
-               href="/#features"
-               className="site-menu-trigger no-underline font-mono text-[13px] text-[var(--muted)] hover:text-[var(--text)] transition-colors"
-             >
-               How it works
-             </Link>
-           </nav>
+          <nav aria-label="Primary" className="hidden items-center gap-1 text-[14px] leading-none md:flex">
+            <Link
+              href="/#features"
+              className="site-menu-trigger no-underline font-mono text-[13px] text-[var(--muted)] transition-colors hover:text-[var(--text)]"
+            >
+              How it works
+            </Link>
+            <span className="mx-1 h-4 w-px bg-[var(--border)]" aria-hidden="true" />
+            {formatLinks.map((link) => {
+              const isActive = pathname === link.href.slice(0, -1) || pathname === link.href;
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={[
+                    "rounded-md px-2 py-1 font-mono text-[12px] no-underline transition-colors",
+                    isActive
+                      ? "bg-cyan-400/10 text-cyan-300"
+                      : "text-[var(--muted)] hover:bg-white/[0.03] hover:text-[var(--text)]"
+                  ].join(" ")}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
         {!isToolPage ? (
@@ -48,7 +74,7 @@ export function SiteHeader() {
             href="/tool/"
             className="cyberpunk-button cta inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-3.5 py-2 font-sans text-[13px] font-medium focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] sm:px-5 sm:text-[15px]"
           >
-            Compare configs
+            Open Tool
           </Link>
         ) : null}
       </div>

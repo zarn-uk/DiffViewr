@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { HeroSection } from "@/components/landing/hero-section";
+import { CompareByFormat } from "@/components/landing/compare-by-format";
 
 type TrustPoint = {
   title: string;
@@ -15,12 +17,12 @@ const trustPoints: TrustPoint[] = [
     icon: "ti-shield-lock"
   },
   {
-    title: "JSON · YAML · .ENV",
+    title: "JSON / YAML / .ENV",
     subLabel: "format-aware compare",
     icon: "ti-file-code"
   },
   {
-    title: "Template A → Target B",
+    title: "Template A to Target B",
     subLabel: "source-of-truth flow",
     icon: "ti-arrow-right"
   },
@@ -67,15 +69,60 @@ const useCases = [
   }
 ];
 
-export const metadata = {
-  title: "DiffViewr | Config File Diff Tool for Developers",
-  description:
-    "Compare appsettings, YAML, and .env config files using a template-to-target model. Paste Template A, paste Target B, see only what actually changed. 100% in-browser."
+const homepageDescription =
+  "Compare appsettings, YAML, and .env config files using a template-to-target model. Paste Template A, paste Target B, see only what actually changed. 100% in-browser.";
+const softwareApplicationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "DiffViewr",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  url: "https://www.diffviewr.com/",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD"
+  },
+  featureList: [
+    "JSON configuration comparison",
+    "YAML configuration comparison",
+    ".env configuration comparison",
+    "Template A to Target B key-order alignment",
+    "Duplicate key validation",
+    "Client-side processing"
+  ]
+};
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "DiffViewr | Config File Diff Tool for Developers"
+  },
+  description: homepageDescription,
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    title: "DiffViewr | Config File Diff Tool for Developers",
+    description: homepageDescription,
+    url: "/",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DiffViewr | Config File Diff Tool for Developers",
+    description: homepageDescription
+  }
 };
 
 export default function Page() {
   return (
     <main className="flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(softwareApplicationJsonLd)
+        }}
+      />
       <HeroSection />
 
       <section className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-3 px-0 py-6 min-[430px]:grid-cols-2 sm:py-8 lg:grid-cols-4 lg:px-10">
@@ -215,13 +262,15 @@ export default function Page() {
         </div>
       </section>
 
+      <CompareByFormat />
+
       <section id="features" className="feature-stage relative -mx-4 overflow-hidden border-y border-[var(--border)] sm:-mx-6 lg:-mx-10">
         <div className="feature-stage-grid absolute inset-0" aria-hidden="true" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16 lg:px-10 lg:py-20">
         <div className="mb-9 max-w-3xl">
           <p className="font-mono text-[12px] uppercase tracking-[1.8px] text-cyan-400">
-            Template · Target · diff
+            Template / Target / diff
           </p>
           <h2 className="mt-3 font-sans text-[clamp(2rem,4vw,3rem)] font-normal leading-tight tracking-tight text-[var(--text)]">
             The only diff tool that treats one file as the source of truth.
@@ -248,7 +297,7 @@ export default function Page() {
                   <div className="text-slate-400">system:</div>
                   <div className="pl-3 text-white">region: eu</div>
                 </div>
-                <div className="flex items-center justify-center text-[18px] text-cyan-300">→</div>
+                <div className="flex items-center justify-center text-[18px] text-cyan-300">to</div>
                 <div className="rounded border border-cyan-400/25 bg-[#0d1b24] p-3">
                   <div className="mb-2 text-[10px] uppercase tracking-[1.4px] text-cyan-300">target reordered</div>
                   <div className="text-slate-400">logging:</div>
@@ -342,7 +391,7 @@ export default function Page() {
           </div>
           <div className="mt-10 flex flex-col items-center gap-4 text-center">
             <p className="font-mono text-[13px] text-[var(--muted)]">
-              No paste limits · No watermarks · No account
+              No paste limits / No watermarks / No account
             </p>
             <Link
               href="/tool/"
@@ -357,7 +406,7 @@ export default function Page() {
                   strokeLinejoin="round"
                 />
               </svg>
-              Try it on your config
+              Open Tool
             </Link>
           </div>
         </div>

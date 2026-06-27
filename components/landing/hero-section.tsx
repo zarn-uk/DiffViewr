@@ -59,7 +59,7 @@ export function HeroSection() {
                   strokeLinejoin="round"
                 />
               </svg>
-              Open the tool
+              Open Tool
             </Link>
             <Link
               href="/tool?sample=1"

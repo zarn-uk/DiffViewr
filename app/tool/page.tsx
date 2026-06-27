@@ -15,6 +15,7 @@ import { useReorderArrays } from "@/hooks/use-reorder-arrays";
 import { useConfigWorker } from "@/hooks/use-config-worker";
 import { flags } from "@/lib/flags";
 import { captureEvent } from "@/lib/analytics";
+import { formatLandingPages, type FormatLandingKey } from "@/lib/formatLandingContent";
 
 type SortResult = {
   resultText: string;
@@ -69,16 +70,17 @@ function SearchParamsInit({
   onLoadSample,
   children,
 }: {
-  onLoadSample: () => void;
+  onLoadSample: (sampleName: string) => void;
   children: ReactNode;
 }) {
   const searchParams = useSearchParams();
   const sampleLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (sampleLoadedRef.current || searchParams.get("sample") !== "1") return;
+    const sampleName = searchParams.get("sample");
+    if (sampleLoadedRef.current || !sampleName) return;
     sampleLoadedRef.current = true;
-    onLoadSample();
+    onLoadSample(sampleName);
   }, [onLoadSample, searchParams]);
 
   return <>{children}</>;
@@ -328,10 +330,16 @@ export default function Page() {
     }
   }
 
-  const onLoadSample = useCallback(() => {
+  const onLoadSample = useCallback((sampleName: string) => {
     clearMessages();
-    setRefText(JSON.stringify(SAMPLE.reference, null, 2));
-    setTargetText(JSON.stringify(SAMPLE.target, null, 2));
+    const formatSample = getFormatSample(sampleName);
+    if (formatSample) {
+      setRefText(formatSample.referenceSample);
+      setTargetText(formatSample.targetSample);
+    } else {
+      setRefText(JSON.stringify(SAMPLE.reference, null, 2));
+      setTargetText(JSON.stringify(SAMPLE.target, null, 2));
+    }
     setResult(null);
     setCompare(null);
     setInputsCollapsed(false);
@@ -406,6 +414,14 @@ export default function Page() {
       if (requestId === comparisonRequestRef.current) setIsProcessing(false);
     }
   }
+
+function getFormatSample(sampleName: string) {
+  if (sampleName === "yaml" || sampleName === "json" || sampleName === "env") {
+    return formatLandingPages[sampleName as FormatLandingKey];
+  }
+
+  return null;
+}
 
 const SAMPLE = {
   reference: {
