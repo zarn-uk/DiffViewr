@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import {
   Geist,
@@ -20,10 +21,51 @@ const monoFont = JetBrains_Mono({
   variable: "--jetbrains-mono"
 });
 
-export const metadata = {
-  title: "DiffViewr",
+const siteUrl = "https://www.diffviewr.com";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "DiffViewr | Config File Diff Tool for Developers",
+    template: "%s | DiffViewr"
+  },
   description:
-    "Align config key order in B to match A (diff-friendly ordering).",
+    "Compare JSON, YAML, and .env config files in your browser. Align Target B to Template A and review real changes without key-order noise.",
+  applicationName: "DiffViewr",
+  authors: [{ name: "DiffViewr" }],
+  creator: "DiffViewr",
+  publisher: "DiffViewr",
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    title: "DiffViewr | Config File Diff Tool for Developers",
+    description:
+      "Compare JSON, YAML, and .env config files in your browser. Align Target B to Template A and review real changes without key-order noise.",
+    url: "/",
+    siteName: "DiffViewr",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/hero-technical-bg-1823.jpg",
+        width: 1823,
+        height: 863,
+        alt: "DiffViewr config comparison preview"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DiffViewr | Config File Diff Tool for Developers",
+    description:
+      "Compare JSON, YAML, and .env config files in your browser. Align Target B to Template A and review real changes without key-order noise.",
+    images: ["/hero-technical-bg-1823.jpg"]
+  },
+  robots: {
+    index: true,
+    follow: true
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
